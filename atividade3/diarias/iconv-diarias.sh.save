@@ -1,0 +1,26 @@
+iconv -f ISO-8859-1 -t UTF-8 input.csv > output.csv
+
+201601_Diarias.csv 201601_Diarias.csv  
+201603_Diarias.csv  
+201605_Diarias.csv  
+201607_Diarias.csv  
+201609_Diarias.csv  
+201611_Diarias.csv  
+201602_Diarias.csv  
+201604_Diarias.csv  
+201606_Diarias.csv  
+201608_Diarias.csv  
+201610_Diarias.csv  
+201612_Diarias.csv  
+201603_Diarias.csv  
+201605_Diarias.csv  
+201607_Diarias.csv  
+201609_Diarias.csv  
+201611_Diarias.csv  
+201602_Diarias.csv  
+201604_Diarias.csv  
+201606_Diarias.csv  
+201608_Diarias.csv  
+201610_Diarias.csv  
+201612_Diarias.csv
+

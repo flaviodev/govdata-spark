@@ -1,0 +1,119 @@
+println("--------------------------------------------------------")
+println("Aplicativo de wordcounts das obras de Shakespeare")
+println("--------------------------------------------------------")
+
+println("\nSetando caminho base dos arquivos da aplicação:")
+val caminhoBase = "/home/fdsdev/DevProjects/bigdata/atividade1/"
+
+println("\n\nCarregando arquivo das obras:")
+val livrosRDD = sc.textFile(caminhoBase + "pg100.txt")
+
+println("\n\nCarregando arquivo das stopwords:")
+val stopWordsRDD = sc.textFile(caminhoBase + "stopwords.txt")
+
+println("\n\nTransformando stopwords em uma lista (para usar o contains)")
+val listStopWords = stopWordsRDD.collect
+
+println("\n\nCarregando arquivo com texto de direitos do livro que aparece de forma recorrente entre as obras (que influência na contagem)")
+val textoRecorrenteRDD = sc.textFile(caminhoBase + "texto_recorrente.txt")
+
+println("\n\nTransformando texto recorrente em uma lista (para usar o contains)")
+val listTextoRecorrente = textoRecorrenteRDD.collect
+
+println("\n\nFiltrando texto recorrente")
+var livrosSemTextoRecorrente = livrosRDD.filter(sentenca => !listTextoRecorrente.contains(sentenca))
+
+println("\n\nQuebrando sentenças do arquivo em palavras")
+val palavras  = livrosSemTextoRecorrente.flatMap(_.split(" "))
+
+println("\n\nRemovendo caracteres indesejados \"<>&$#*_/()?:!.,;{}[]-")
+val palavrasNormalizadas = palavras.map(palavra => palavra.trim().toLowerCase().replaceAll("[\\\"<>&$#*_/()?:!.,;{}\\[\\]\\-]+",""))
+
+println("\n\nRemovendo Apóstofo em início de palavras")
+val palavrasSemAposfoInicial = palavrasNormalizadas.map(
+   palavra => {
+      if(palavra.startsWith("'")) {
+         palavra.substring(1); 
+      } else {
+         palavra;
+      }
+   }
+)
+
+println("\n\nFiltrando palavras (listadas no arquivo stopwords, vazias, iniciadas com 'act_' ou com números")
+val palavrasFiltradas = palavrasSemAposfoInicial.filter(
+   palavra => (
+      !palavra.equals("") 
+      && palavra.length()>1 
+      && !palavra.startsWith("act_") 
+      && !listStopWords.contains(palavra) 
+      && !Character.isDigit(palavra.charAt(0))
+   )
+)
+
+println("\n\nRepetindo remoção Apóstofo em início de palavras")
+val palavrasSemAposfoInicial2 = palavrasFiltradas.map(
+   palavra => {
+      if(palavra.startsWith("'")) {
+         palavra.substring(1); 
+      } else {
+         palavra;
+      }
+   }
+)
+
+
+println("\n\nConvertendo palavras para par key-value com valor 1 para posterior contagem")
+val palavrasComContador = palavrasSemAposfoInicial2.map(palavra => (palavra,1))
+
+println("\n\nAplicando reduce pela chave, agrupando a chave somando o contador (1)")
+val palavrasAgrupadas = palavrasComContador.reduceByKey(_+_)
+
+println("\n\nOrdenando no sentido decrescente pelo campo da contagem")
+val palavrasRankeadas = palavrasAgrupadas.sortBy(_._2, false)
+
+println("\n\nCriando RDD com as top 20 palavras mais citadas")
+val top20 = sc.parallelize(palavrasRankeadas.take(20))
+
+println("\n\nImportando fs_ para manipular arquivos")
+import org.apache.hadoop.fs._;
+val fs = FileSystem.get(sc.hadoopConfiguration);
+
+println("\n\nDeletando resultado anterior")
+fs.delete(new Path(caminhoBase + "top20_csv_out"), true);
+
+println("\n\nSalvando arquivo csv dos top20")
+top20.toDF().coalesce(1).write.format("com.databricks.spark.csv").save("file://"+caminhoBase+"top20_csv_out")
+
+println("\n\nObtendo nome do arquivo gerado")
+val file = fs.globStatus(new Path(caminhoBase + "top20_csv_out/part*"))(0).getPath().getName();
+
+println("\n\nRenomeando arquivo para top20.csv")
+fs.rename(new Path(caminhoBase + "top20_csv_out/" + file), new Path(caminhoBase + "top20_csv_out/top20.csv"));
+
+println("\n\nCriando RDD com as palavras agrupadas pela primeira letra")
+val palavrasAgrupadasPorLetra = palavrasAgrupadas.map(palavra=> (palavra._1.substring(0,1),palavra._1,palavra._2))
+
+println("\n\nAplicando ordenação ascendente para a primeira letra e descendente para a contagem")
+val palavrasAgrupadasPorLetraOrdenadas =  palavrasAgrupadasPorLetra.sortBy(palavra => (palavra._1, -palavra._3))
+
+println("\n\nRemovendo primeira letra do agrupamento")
+val palavrasAgrupadasEOrdenadas =  palavrasAgrupadasPorLetraOrdenadas.map(palavra => (palavra._2, palavra._3))
+
+println("\n\nDeletando resultado anterior")
+fs.delete(new Path(caminhoBase + "todasPalavrasEmOrdemAlfabetica_csv_out"), true);
+
+println("\n\nSalvando arquivo csv de Todas Palavras Em Ordem Alfabetica")
+palavrasAgrupadasEOrdenadas.toDF().coalesce(1).write.format("com.databricks.spark.csv").save("file://"+caminhoBase+"todasPalavrasEmOrdemAlfabetica_csv_out")
+
+println("\n\nObtendo nome do arquivo gerado")
+val file = fs.globStatus(new Path(caminhoBase + "todasPalavrasEmOrdemAlfabetica_csv_out/part*"))(0).getPath().getName();
+
+println("\n\nRenomeando arquivo para todasPalavrasEmOrdemAlfabetica.csv")
+fs.rename(new Path(caminhoBase + "todasPalavrasEmOrdemAlfabetica_csv_out/" + file), new Path(caminhoBase + "todasPalavrasEmOrdemAlfabetica_csv_out/todasPalavrasEmOrdemAlfabetica.csv"));
+
+println("--------------------------------------------------------")
+println("Resumo")
+println("--------------------------------------------------------")
+println("Arquivo da atividade dos top20 -> " + caminhoBase + "top20_csv_out/top20.csv" )
+println("Arquivo da atividade dos todas palavras -> " + caminhoBase + "todasPalavrasEmOrdemAlfabetica_csv_out/todasPalavrasEmOrdemAlfabetica.csv" )

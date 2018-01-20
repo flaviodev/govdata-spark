@@ -1,0 +1,416 @@
+fdsdev@slave1:~/DevProjects/bigdata$ spark-shell
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+17/12/15 17:52:53 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+17/12/15 17:52:53 WARN Utils: Your hostname, slave1 resolves to a loopback address: 127.0.1.1; using 192.168.15.149 instead (on interface wlx6466b324c25d)
+17/12/15 17:52:53 WARN Utils: Set SPARK_LOCAL_IP if you need to bind to another address
+17/12/15 17:53:04 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+Spark context Web UI available at http://192.168.15.149:4040
+Spark context available as 'sc' (master = local[*], app id = local-1513367575098).
+Spark session available as 'spark'.
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /___/ .__/\_,_/_/ /_/\_\   version 2.2.0
+      /_/
+         
+Using Scala version 2.11.8 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_151)
+Type in expressions to have them evaluated.
+Type :help for more information.
+
+scala> :load /home/fdsdev/DevProjects/bigdata/atividade3/arquivo_carregar.txt
+Loading /home/fdsdev/DevProjects/bigdata/atividade3/arquivo_carregar.txt...
+======================================================================
+Atividade 3: Análise panorama estados ibge x educação x bolsa família
+======================================================================
+
+Setando tempo inicial para contagem:
+tempoInicial: Long = 1513367786663
+
+Setando caminho base dos arquivos da aplicação:
+caminhoBase: String = /home/fdsdev/DevProjects/bigdata/atividade3/
+
+Definindo locale da execução corrente:
+localeCorrente: java.util.Locale = pt_BR
+
+Declarando função para formatação de números:
+formataNumero: (valor: Number, isValorMonetario: Boolean)String
+arredondaValor: (valor: Double, casas: Int)Double
+
+
+Carregando arquivo csv com relacao dos estados da federacao:
+estados: org.apache.spark.sql.DataFrame = [sigla: string, nome: string ... 1 more field]
+
+
+Carregando arquivos csv com a relação de diarias de  viagens referentes a 2016:
+diarias: org.apache.spark.sql.DataFrame = [Código Órgão Superior: string, Nome Órgão Superior: string ... 19 more fields]
+
+
+Filtrando despesas de diarias de viagens do MINISTERIO DA EDUCACAO em 2016:
+diariasPreProcessadas: org.apache.spark.sql.DataFrame = [Valor: double, Data: string]
+
+
+Somando despesas com diarias MINISTERIO DA EDUCACAO em 2016:
+17/12/15 17:56:45 WARN Utils: Truncated the string representation of a plan since it was too large. This behavior can be adjusted by setting 'spark.debug.maxToStringFields' in SparkEnv.conf.
+valorDiariasME2016: Double = 1.2620067776995662E8                               
+
+
+Somando despesas com diarias MINISTERIO DA EDUCACAO em Janeiro de 2016:
+valorDiariasMEJaneiro2016: Double = 2401705.3000000305                          
+
+
+Carregando arquivo csv com relacao dos pagamentos de convenios do governo federal com estados e municipios:
+convenios: org.apache.spark.sql.DataFrame = [Número Convênio: int, UF: string ... 20 more fields]
+
+
+Filtrando convenios do MINISTERIO DA EDUCACAO repassados em 2016
+joinConvenioMEEstados2016: org.apache.spark.sql.DataFrame = [UF Convenio: string, Concedente: int ... 2 more fields]
+
+
+Somando convenios do MINISTERIO DA EDUCACAO repassados em 2016
+sumConvenioMEEstados2016: org.apache.spark.sql.DataFrame = [UF Convenio: string, Valor: double]
+
+
+Calculando media mensal convenios do MINISTERIO DA EDUCACAO repassados em 2016
+mediaMensalConvenioMEEstados2016: org.apache.spark.sql.DataFrame = [UF Convenio: string, Valor: double]
+
+
+Filtrando convenios do MINISTERIO DA EDUCACAO repassados em janeiro de 2016
+joinConvenioMEEstadosJaneiro2016: org.apache.spark.sql.DataFrame = [UF Convenio: string, Concedente: int ... 2 more fields]
+
+
+Somando convenios do MINISTERIO DA EDUCACAO repassados em janeiro de 2016
+sumConvenioMEEstadosJaneiro2016: org.apache.spark.sql.DataFrame = [UF Convenio: string, Valor: double]
+orderFormatSumConvenioMEEstados: org.apache.spark.sql.DataFrame = [UF Convenio: string, Valor: string]
+orderMediaMensalConvenioMEEstados2016: org.apache.spark.sql.DataFrame = [UF Convenio: string, Valor: string]
+valorRepassesME2016: Double = 3.580172434499999E8                               
+valorRepassesMEJaneiro2016: Double = 4834329.109999999                          
+
+
+Carregando arquivo csv com panorama dos estados IBGE:
+dadosIniciaisPanorama: org.apache.spark.sql.DataFrame = [UF: string, Estado: string ... 5 more fields]
+
+
+Calculando proporção entre matrículas do ensino fundamental 2015 pela população estimada 2017 com base no Panorama dos estados do IBGE:
+panorama: org.apache.spark.sql.DataFrame = [UF: string, Populacao 2017(estimada): int ... 4 more fields]
+panoramaFormatado: org.apache.spark.sql.DataFrame = [UF: string, Populacao 2017(estimada): string ... 4 more fields]
+
+
+Agrupando soma repasses de janeiro 2016 do Ministerio da Educacao com o Panorama dos estados
+joinPanoramaConvenioMEEstados: org.apache.spark.sql.DataFrame = [UF: string, Poupulacao: int ... 7 more fields]
+orderFormatJoinPanoramaConvenioMEEstados: org.apache.spark.sql.DataFrame = [UF: string, Poupulacao: string ... 7 more fields]
+
+
+Agrupando media repasses de 2016 do Ministerio da Educacao com o Panorama dos estados
+joinPanoramaConvenioMEEstadosMedia2016: org.apache.spark.sql.DataFrame = [UF: string, Poupulacao: int ... 7 more fields]
+orderFormatJoinPanoramaConvenioMEEstadosMedia2016: org.apache.spark.sql.DataFrame = [UF: string, Poupulacao: string ... 7 more fields]
+
+
+Carregando arquivo csv com relacao da folha de pagamento do bolsa familia em janeiro de 2017:
+bolsaFamilia: org.apache.spark.sql.DataFrame = [UF: string, C�digo SIAFI Munic�pio: int ... 10 more fields]
+groupByCountBolsaFamiliaPorUF: org.apache.spark.sql.DataFrame = [UF Bolsa Familia: string, Quantidade Beneficios: bigint]
+orderFormatGroupByCountBolsaFamiliaPorUF: org.apache.spark.sql.DataFrame = [UF: string, Quantidade Beneficios: string]
+groupBySumBolsaFamiliaPorUF: org.apache.spark.sql.DataFrame = [UF: string, Valor Beneficios: double]
+orderFormatGroupBySumBolsaFamiliaPorUF: org.apache.spark.sql.DataFrame = [UF: string, Valor Beneficios: string]
+sumQtdTotalBeneficiosJaneiro2017: Long = 13601764                               
+sumValorTotalBeneficiosJaneiro2017: Double = 2.426682591E9                      
+
+
+Agrupando media repasses de 2016 do Ministerio da Educacao com o Panorama dos estados com Quantidad de Beneficios da Folha de Pagamento do bolsa familia em janeiro de 2017
+joinPanoramaQtdBolsaFamilia: org.apache.spark.sql.DataFrame = [UF Panorama: string, Poupulacao: int ... 9 more fields]
+
+
+Agrupando media repasses de 2016 do Ministerio da Educacao com o Panorama dos estados com Quantidad de Beneficios da Folha de Pagamento do bolsa familia em janeiro de 2017
+joinPanoramaSumBolsaFamilia: org.apache.spark.sql.DataFrame = [UF: string, Poupulacao: int ... 12 more fields]
+
+
+Ordenando e formatando media repasses de 2016 do Ministerio da Educacao com o Panorama dos estados com Quantidad de Beneficios da Folha de Pagamento do bolsa familia em janeiro de 2017
+orderFormatJoinPanoramaSumBolsaFamilia: org.apache.spark.sql.DataFrame = [UF: string, Populacao: string ... 9 more fields]
+
+
+======================================================================
+Resumo
+======================================================================
+
+
+----------------------------------------------------------------------
+Panorama do estados IBGE 
+(estados x populacao x matriculas Ensino Fundamental x renda mensal x IDH)
+----------------------------------------------------------------------
+
+
+Dados extraidos diretamento do site do IBGE (https://cidades.ibge.gov.br/brasil/<UF>/panorama)
++---+------------------------+------------------+-------------------+---------------------------+--------+
+|UF |Populacao 2017(estimada)|Matriculas EF 2015|% Prop Matric/Popul|Rend Mensal per Capita 2016|IDH 2010|
++---+------------------------+------------------+-------------------+---------------------------+--------+
+|AC |829.619                 |162.822           |19.63              |R$ 761,00                  |0.663   |
+|AL |3.375.823               |523.339           |15.5               |R$ 662,00                  |0.631   |
+|AP |797.722                 |136.881           |17.16              |R$ 881,00                  |0.708   |
+|AM |4.063.614               |723.437           |17.8               |R$ 739,00                  |0.674   |
+|BA |15.344.447              |2.123.425         |13.84              |R$ 773,00                  |0.66    |
+|CE |9.020.460               |1.272.352         |14.11              |R$ 751,00                  |0.682   |
+|DF |3.039.444               |390.079           |12.83              |R$ 2.351,00                |0.824   |
+|ES |4.016.356               |509.074           |12.68              |R$ 1.157,00                |0.74    |
+|GO |6.778.772               |886.246           |13.07              |R$ 1.140,00                |0.735   |
+|MA |7.000.229               |1.235.595         |17.65              |R$ 575,00                  |0.639   |
+|MT |3.344.544               |461.713           |13.8               |R$ 1.139,00                |0.725   |
+|MS |2.713.147               |400.432           |14.76              |R$ 1.283,00                |0.729   |
+|MG |21.119.536              |2.657.185         |12.58              |R$ 1.168,00                |0.731   |
+|PR |11.320.892              |1.445.820         |12.77              |R$ 1.398,00                |0.749   |
+|PB |4.025.558               |577.768           |14.35              |R$ 790,00                  |0.658   |
+|PA |8.366.628               |1.475.087         |17.63              |R$ 708,00                  |0.646   |
+|PE |9.473.266               |1.324.537         |13.98              |R$ 872,00                  |0.673   |
+|PI |3.219.257               |506.583           |15.74              |R$ 747,00                  |0.646   |
+|RN |3.507.003               |486.560           |13.87              |R$ 919,00                  |0.684   |
+|RS |11.322.895              |1.330.075         |11.75              |R$ 1.554,00                |0.746   |
+|RJ |16.718.956              |2.064.316         |12.35              |R$ 1.429,00                |0.761   |
+|RO |1.805.788               |276.904           |15.33              |R$ 901,00                  |0.69    |
+|RR |522.636                 |91.651            |17.54              |R$ 1.068,00                |0.707   |
+|SC |7.001.161               |837.814           |11.97              |R$ 1.458,00                |0.774   |
+|SE |2.288.116               |343.734           |15.02              |R$ 878,00                  |0.665   |
+|SP |45.094.866              |5.330.730         |11.82              |R$ 1.723,00                |0.783   |
+|TO |1.550.194               |251.179           |16.2               |R$ 863,00                  |0.699   |
++---+------------------------+------------------+-------------------+---------------------------+--------+
+
+
+
+----------------------------------------------------------------------
+Ministerio da Educacao: convenios com estados X despesas com diarias
+----------------------------------------------------------------------
+
+
+Valor gasto com diarias pelo Ministerio da Educacao em 2016: R$ 126.200.677,77
+Valor repassado aos estados pelo Ministerio da Educacao em 2016: R$ 358.017.243,45
+
+
+Valor gasto com diarias pelo Ministerio da Educacao em Janeiro 2016: R$ 2.401.705,30
+Valor repassado aos estados pelo Ministerio da Educacao em Janeiro 2016: R$ 4.834.329,11
+
+Repasse de convêncios Ministerio da Educacao em Janeiro 2016 por estado
++-----------+---------------+                                                   
+|UF Convenio|Valor          |
++-----------+---------------+
+|MG         |R$ 684.542,61  |
+|MT         |R$ 41.480,08   |
+|PE         |R$ 382.293,71  |
+|PI         |R$ 128.214,46  |
+|PR         |R$ 480.000,00  |
+|RN         |R$ 231.691,77  |
+|RO         |R$ 410.848,79  |
+|RS         |R$ 1.809.478,02|
+|SE         |R$ 284.812,47  |
+|TO         |R$ 380.967,20  |
++-----------+---------------+
+
+
+
+Panorama x Repasses do Ministerio da Educacao Janeiro 2016
++---+----------+----------+--------------+------------+-----+-------------------+-----------------+-----------------------+
+|UF |Poupulacao|Matriculas|% Popul/Matric|Renda Mensal|IDH  |Repasse jan 2016 ME|Repasse/Matricula|Repasse/1000 habitantes|
++---+----------+----------+--------------+------------+-----+-------------------+-----------------+-----------------------+
+|MG |21.119.536|2.657.185 |12.58         |R$ 1.168,00 |0.731|R$ 684.542,61      |R$ 0,26          |R$ 32,41               |
+|MT |3.344.544 |461.713   |13.8          |R$ 1.139,00 |0.725|R$ 41.480,08       |R$ 0,09          |R$ 12,40               |
+|PE |9.473.266 |1.324.537 |13.98         |R$ 872,00   |0.673|R$ 382.293,71      |R$ 0,29          |R$ 40,36               |
+|PI |3.219.257 |506.583   |15.74         |R$ 747,00   |0.646|R$ 128.214,46      |R$ 0,25          |R$ 39,83               |
+|PR |11.320.892|1.445.820 |12.77         |R$ 1.398,00 |0.749|R$ 480.000,00      |R$ 0,33          |R$ 42,40               |
+|RN |3.507.003 |486.560   |13.87         |R$ 919,00   |0.684|R$ 231.691,77      |R$ 0,48          |R$ 66,07               |
+|RO |1.805.788 |276.904   |15.33         |R$ 901,00   |0.69 |R$ 410.848,79      |R$ 1,48          |R$ 227,52              |
+|RS |11.322.895|1.330.075 |11.75         |R$ 1.554,00 |0.746|R$ 1.809.478,02    |R$ 1,36          |R$ 159,81              |
+|SE |2.288.116 |343.734   |15.02         |R$ 878,00   |0.665|R$ 284.812,47      |R$ 0,83          |R$ 124,47              |
+|TO |1.550.194 |251.179   |16.2          |R$ 863,00   |0.699|R$ 380.967,20      |R$ 1,52          |R$ 245,75              |
++---+----------+----------+--------------+------------+-----+-------------------+-----------------+-----------------------+
+
+
+
+Gasto médio mensal com diarias pelo Ministerio da Educacao em 2016: R$ 10.516.723,15
+Media mensal do Valor repassado aos estados pelo Ministerio da Educacao em 2016: R$ 29.834.770,29
+
+ Media mensal de repasse de convêncios Ministerio da Educacao em 2016 por estado
++-----------+---------------+                                                   
+|UF Convenio|Valor          |
++-----------+---------------+
+|AC         |R$ 43.593,34   |
+|AL         |R$ 367.597,04  |
+|AM         |R$ 393.761,23  |
+|AP         |R$ 30.696,19   |
+|BA         |R$ 590.964,16  |
+|CE         |R$ 3.749.699,61|
+|DF         |R$ 61.109,53   |
+|ES         |R$ 84.376,90   |
+|GO         |R$ 1.799.119,77|
+|MA         |R$ 772.665,25  |
+|MG         |R$ 1.483.299,51|
+|MS         |R$ 306.956,80  |
+|MT         |R$ 2.181.223,95|
+|PA         |R$ 832.773,60  |
+|PB         |R$ 207.348,57  |
+|PE         |R$ 851.181,82  |
+|PI         |R$ 1.710.732,66|
+|PR         |R$ 3.692.370,96|
+|RJ         |R$ 1.286.657,69|
+|RN         |R$ 410.072,03  |
+|RO         |R$ 92.853,53   |
+|RR         |R$ 39.546,02   |
+|RS         |R$ 2.232.965,40|
+|SC         |R$ 1.461.314,72|
+|SE         |R$ 73.921,42   |
+|SP         |R$ 4.475.317,62|
+|TO         |R$ 602.650,96  |
++-----------+---------------+
+
+
+
+Panorama x Repasses do Ministerio da Educacao Media Mensal 2016
++---+----------+----------+--------------+------------+-----+-----------------------+-----------------+-----------------------+
+|UF |Poupulacao|Matriculas|% Popul/Matric|Renda Mensal|IDH  |Media Mensal Repasse ME|Repasse/Matricula|Repasse/1000 habitantes|
++---+----------+----------+--------------+------------+-----+-----------------------+-----------------+-----------------------+
+|AC |829.619   |162.822   |19.63         |R$ 761,00   |0.663|R$ 43.593,34           |R$ 0,27          |R$ 52,55               |
+|AL |3.375.823 |523.339   |15.5          |R$ 662,00   |0.631|R$ 367.597,04          |R$ 0,70          |R$ 108,89              |
+|AM |4.063.614 |723.437   |17.8          |R$ 739,00   |0.674|R$ 393.761,23          |R$ 0,54          |R$ 96,90               |
+|AP |797.722   |136.881   |17.16         |R$ 881,00   |0.708|R$ 30.696,19           |R$ 0,22          |R$ 38,48               |
+|BA |15.344.447|2.123.425 |13.84         |R$ 773,00   |0.66 |R$ 590.964,16          |R$ 0,28          |R$ 38,51               |
+|CE |9.020.460 |1.272.352 |14.11         |R$ 751,00   |0.682|R$ 3.749.699,61        |R$ 2,95          |R$ 415,69              |
+|DF |3.039.444 |390.079   |12.83         |R$ 2.351,00 |0.824|R$ 61.109,53           |R$ 0,16          |R$ 20,11               |
+|ES |4.016.356 |509.074   |12.68         |R$ 1.157,00 |0.74 |R$ 84.376,90           |R$ 0,17          |R$ 21,01               |
+|GO |6.778.772 |886.246   |13.07         |R$ 1.140,00 |0.735|R$ 1.799.119,77        |R$ 2,03          |R$ 265,40              |
+|MA |7.000.229 |1.235.595 |17.65         |R$ 575,00   |0.639|R$ 772.665,25          |R$ 0,63          |R$ 110,38              |
+|MG |21.119.536|2.657.185 |12.58         |R$ 1.168,00 |0.731|R$ 1.483.299,51        |R$ 0,56          |R$ 70,23               |
+|MS |2.713.147 |400.432   |14.76         |R$ 1.283,00 |0.729|R$ 306.956,80          |R$ 0,77          |R$ 113,14              |
+|MT |3.344.544 |461.713   |13.8          |R$ 1.139,00 |0.725|R$ 2.181.223,95        |R$ 4,72          |R$ 652,17              |
+|PA |8.366.628 |1.475.087 |17.63         |R$ 708,00   |0.646|R$ 832.773,60          |R$ 0,56          |R$ 99,54               |
+|PB |4.025.558 |577.768   |14.35         |R$ 790,00   |0.658|R$ 207.348,57          |R$ 0,36          |R$ 51,51               |
+|PE |9.473.266 |1.324.537 |13.98         |R$ 872,00   |0.673|R$ 851.181,82          |R$ 0,64          |R$ 89,85               |
+|PI |3.219.257 |506.583   |15.74         |R$ 747,00   |0.646|R$ 1.710.732,66        |R$ 3,38          |R$ 531,41              |
+|PR |11.320.892|1.445.820 |12.77         |R$ 1.398,00 |0.749|R$ 3.692.370,96        |R$ 2,55          |R$ 326,16              |
+|RJ |16.718.956|2.064.316 |12.35         |R$ 1.429,00 |0.761|R$ 1.286.657,69        |R$ 0,62          |R$ 76,96               |
+|RN |3.507.003 |486.560   |13.87         |R$ 919,00   |0.684|R$ 410.072,03          |R$ 0,84          |R$ 116,93              |
+|RO |1.805.788 |276.904   |15.33         |R$ 901,00   |0.69 |R$ 92.853,53           |R$ 0,34          |R$ 51,42               |
+|RR |522.636   |91.651    |17.54         |R$ 1.068,00 |0.707|R$ 39.546,02           |R$ 0,43          |R$ 75,67               |
+|RS |11.322.895|1.330.075 |11.75         |R$ 1.554,00 |0.746|R$ 2.232.965,40        |R$ 1,68          |R$ 197,21              |
+|SC |7.001.161 |837.814   |11.97         |R$ 1.458,00 |0.774|R$ 1.461.314,72        |R$ 1,74          |R$ 208,72              |
+|SE |2.288.116 |343.734   |15.02         |R$ 878,00   |0.665|R$ 73.921,42           |R$ 0,22          |R$ 32,31               |
+|SP |45.094.866|5.330.730 |11.82         |R$ 1.723,00 |0.783|R$ 4.475.317,62        |R$ 0,84          |R$ 99,24               |
+|TO |1.550.194 |251.179   |16.2          |R$ 863,00   |0.699|R$ 602.650,96          |R$ 2,40          |R$ 388,76              |
++---+----------+----------+--------------+------------+-----+-----------------------+-----------------+-----------------------+
+
+
+
+----------------------------------------------------------------------
+Beneficios Bolsa Familia
+----------------------------------------------------------------------
+
+
+Quantidade de beneficios por estado em Janeiro de 2017
++---+---------------------+                                                     
+|UF |Quantidade Beneficios|
++---+---------------------+
+|AC |84.635               |
+|AL |396.010              |
+|AM |380.554              |
+|AP |65.295               |
+|BA |1.794.964            |
+|CE |1.029.043            |
+|DF |82.237               |
+|ES |173.976              |
+|GO |313.364              |
+|MA |971.861              |
+|MG |1.043.678            |
+|MS |130.368              |
+|MT |162.136              |
+|PA |918.279              |
+|PB |510.781              |
+|PE |1.119.963            |
+|PI |443.239              |
+|PR |364.683              |
+|RJ |786.744              |
+|RN |343.241              |
+|RO |90.654               |
+|RR |47.740               |
+|RS |367.125              |
+|SC |118.446              |
+|SE |271.107              |
+|SP |1.463.567            |
+|TO |128.074              |
++---+---------------------+
+
+
+
+Soma dos beneficios por estado em Janeiro de 2017
++---+-----------------+                                                         
+|UF |Valor Beneficios |
++---+-----------------+
+|AC |R$ 21.725.837,00 |
+|AL |R$ 73.004.203,00 |
+|AM |R$ 84.808.423,00 |
+|AP |R$ 13.657.672,00 |
+|BA |R$ 322.119.965,00|
+|CE |R$ 181.979.134,00|
+|DF |R$ 12.683.244,00 |
+|ES |R$ 27.382.158,00 |
+|GO |R$ 47.320.392,00 |
+|MA |R$ 202.664.466,00|
+|MG |R$ 172.117.848,00|
+|MS |R$ 22.032.937,00 |
+|MT |R$ 25.992.585,00 |
+|PA |R$ 182.726.692,00|
+|PB |R$ 98.888.301,00 |
+|PE |R$ 197.044.193,00|
+|PI |R$ 90.037.246,00 |
+|PR |R$ 54.596.858,00 |
+|RJ |R$ 134.090.977,00|
+|RN |R$ 60.210.843,00 |
+|RO |R$ 13.622.591,00 |
+|RR |R$ 9.694.704,00  |
+|RS |R$ 58.983.395,00 |
+|SC |R$ 19.058.040,00 |
+|SE |R$ 45.135.522,00 |
+|SP |R$ 232.152.671,00|
+|TO |R$ 22.951.694,00 |
++---+-----------------+
+
+
+
+ Quantidade Total de Beneficios na Folha de Pagamento em Janeiro 2017: 13.601.764
+Valor Total de Beneficios na Folha de Pagamento em Janeiro 2017: R$ 2.426.682.591,00
+
+
+Panorama X Repasses Ministerio da Educacao X Bolsa Familia Janeiro de 2017 (ordenado por IDH)
++---+----------+------------+-----+---------------+--------------+------------+--------+-----------------+----------+--------------+
+|UF |Populacao |Renda Mensal|IDH  |Med Rep ME     |Rep ME/1000hab|Qtd Benef BF|% Pop/BF|Total BF         |Val Med BF|Rep BF/1000hab|
++---+----------+------------+-----+---------------+--------------+------------+--------+-----------------+----------+--------------+
+|AL |3.375.823 |R$ 662,00   |0.631|R$ 367.597,04  |R$ 108,89     |396.010     |11.73   |R$ 73.004.203,00 |R$ 184,35 |R$ 21.625,60  |
+|MA |7.000.229 |R$ 575,00   |0.639|R$ 772.665,25  |R$ 110,38     |971.861     |13.88   |R$ 202.664.466,00|R$ 208,53 |R$ 28.951,12  |
+|PA |8.366.628 |R$ 708,00   |0.646|R$ 832.773,60  |R$ 99,54      |918.279     |10.98   |R$ 182.726.692,00|R$ 198,99 |R$ 21.839,94  |
+|PI |3.219.257 |R$ 747,00   |0.646|R$ 1.710.732,66|R$ 531,41     |443.239     |13.77   |R$ 90.037.246,00 |R$ 203,13 |R$ 27.968,33  |
+|PB |4.025.558 |R$ 790,00   |0.658|R$ 207.348,57  |R$ 51,51      |510.781     |12.69   |R$ 98.888.301,00 |R$ 193,60 |R$ 24.565,12  |
+|BA |15.344.447|R$ 773,00   |0.66 |R$ 590.964,16  |R$ 38,51      |1.794.964   |11.7    |R$ 322.119.965,00|R$ 179,46 |R$ 20.992,61  |
+|AC |829.619   |R$ 761,00   |0.663|R$ 43.593,34   |R$ 52,55      |84.635      |10.2    |R$ 21.725.837,00 |R$ 256,70 |R$ 26.187,73  |
+|SE |2.288.116 |R$ 878,00   |0.665|R$ 73.921,42   |R$ 32,31      |271.107     |11.85   |R$ 45.135.522,00 |R$ 166,49 |R$ 19.726,06  |
+|PE |9.473.266 |R$ 872,00   |0.673|R$ 851.181,82  |R$ 89,85      |1.119.963   |11.82   |R$ 197.044.193,00|R$ 175,94 |R$ 20.800,03  |
+|AM |4.063.614 |R$ 739,00   |0.674|R$ 393.761,23  |R$ 96,90      |380.554     |9.36    |R$ 84.808.423,00 |R$ 222,86 |R$ 20.870,20  |
+|CE |9.020.460 |R$ 751,00   |0.682|R$ 3.749.699,61|R$ 415,69     |1.029.043   |11.41   |R$ 181.979.134,00|R$ 176,84 |R$ 20.174,04  |
+|RN |3.507.003 |R$ 919,00   |0.684|R$ 410.072,03  |R$ 116,93     |343.241     |9.79    |R$ 60.210.843,00 |R$ 175,42 |R$ 17.168,75  |
+|RO |1.805.788 |R$ 901,00   |0.69 |R$ 92.853,53   |R$ 51,42      |90.654      |5.02    |R$ 13.622.591,00 |R$ 150,27 |R$ 7.543,85   |
+|TO |1.550.194 |R$ 863,00   |0.699|R$ 602.650,96  |R$ 388,76     |128.074     |8.26    |R$ 22.951.694,00 |R$ 179,21 |R$ 14.805,69  |
+|RR |522.636   |R$ 1.068,00 |0.707|R$ 39.546,02   |R$ 75,67      |47.740      |9.13    |R$ 9.694.704,00  |R$ 203,07 |R$ 18.549,63  |
+|AP |797.722   |R$ 881,00   |0.708|R$ 30.696,19   |R$ 38,48      |65.295      |8.19    |R$ 13.657.672,00 |R$ 209,17 |R$ 17.120,84  |
+|MT |3.344.544 |R$ 1.139,00 |0.725|R$ 2.181.223,95|R$ 652,17     |162.136     |4.85    |R$ 25.992.585,00 |R$ 160,31 |R$ 7.771,64   |
+|MS |2.713.147 |R$ 1.283,00 |0.729|R$ 306.956,80  |R$ 113,14     |130.368     |4.81    |R$ 22.032.937,00 |R$ 169,01 |R$ 8.120,80   |
+|MG |21.119.536|R$ 1.168,00 |0.731|R$ 1.483.299,51|R$ 70,23      |1.043.678   |4.94    |R$ 172.117.848,00|R$ 164,91 |R$ 8.149,70   |
+|GO |6.778.772 |R$ 1.140,00 |0.735|R$ 1.799.119,77|R$ 265,40     |313.364     |4.62    |R$ 47.320.392,00 |R$ 151,01 |R$ 6.980,67   |
+|ES |4.016.356 |R$ 1.157,00 |0.74 |R$ 84.376,90   |R$ 21,01      |173.976     |4.33    |R$ 27.382.158,00 |R$ 157,39 |R$ 6.817,66   |
+|RS |11.322.895|R$ 1.554,00 |0.746|R$ 2.232.965,40|R$ 197,21     |367.125     |3.24    |R$ 58.983.395,00 |R$ 160,66 |R$ 5.209,22   |
+|PR |11.320.892|R$ 1.398,00 |0.749|R$ 3.692.370,96|R$ 326,16     |364.683     |3.22    |R$ 54.596.858,00 |R$ 149,71 |R$ 4.822,66   |
+|RJ |16.718.956|R$ 1.429,00 |0.761|R$ 1.286.657,69|R$ 76,96      |786.744     |4.71    |R$ 134.090.977,00|R$ 170,44 |R$ 8.020,30   |
+|SC |7.001.161 |R$ 1.458,00 |0.774|R$ 1.461.314,72|R$ 208,72     |118.446     |1.69    |R$ 19.058.040,00 |R$ 160,90 |R$ 2.722,13   |
+|SP |45.094.866|R$ 1.723,00 |0.783|R$ 4.475.317,62|R$ 99,24      |1.463.567   |3.25    |R$ 232.152.671,00|R$ 158,62 |R$ 5.148,10   |
+|DF |3.039.444 |R$ 2.351,00 |0.824|R$ 61.109,53   |R$ 20,11      |82.237      |2.71    |R$ 12.683.244,00 |R$ 154,23 |R$ 4.172,88   |
++---+----------+------------+-----+---------------+--------------+------------+--------+-----------------+----------+--------------+
+
+----------------------------------------------------------------------
+
+
+Tempo de processamento: 1091 segundos
+

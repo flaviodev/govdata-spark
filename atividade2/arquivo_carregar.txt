@@ -1,0 +1,176 @@
+
+println("======================================================================")
+println("Atividade 2: Análise de viagens realizadas pelos ministérios")
+println("======================================================================")
+
+println("\nSetando caminho base dos arquivos da aplicação:")
+val caminhoBase = "/home/fdsdev/DevProjects/bigdata/atividade2/"
+
+println("\nDefinindo locale da execução corrente:")
+val localeCorrente: java.util.Locale = new java.util.Locale("pt", "BR")
+
+println("\nDeclarando função para formatação de números:")
+def formataNumero(valor:Number, isValorMonetario:Boolean):String = {  
+   var formatador:java.text.NumberFormat = null;   
+
+   if(isValorMonetario == true) { 
+      formatador = java.text.NumberFormat.getCurrencyInstance(localeCorrente);
+   } else {
+      formatador = java.text.NumberFormat.getInstance(localeCorrente);
+   }
+
+   formatador.format(valor);
+}
+
+def arredondaValor(valor:Double, casas:Int = 2):Double = { 
+   BigDecimal(valor).setScale(casas, BigDecimal.RoundingMode.HALF_UP).toDouble
+}
+
+println("\n\nCarregando arquivo csv com a relação de diarias de  viagens:")
+val dadosIniciais = spark.read.option("header", true).option("inferSchema", true).option("sep","\t").csv(caminhoBase + "diarias.csv")
+
+println("\n\nGerando novo dataset com as colunas codigo, nome e valor (tratanto e convertendo Substituindo o campo valor")
+val dadosPreProcessados = dadosIniciais.map(row => (row.getString(0).replace("Detalhamento das informações não disponível.","00000"),row.getString(1).trim().toUpperCase().replace("\"",""),row.getString(20).replace(",",".").toDouble)).toDF("Codigo", "Nome", "Valor")
+
+println("\n\nContando a quantidade de viagens agrupando por ministério:")
+val countByMinisterioMaisViagens = dadosPreProcessados.groupBy("Codigo","Nome").count().toDF("Codigo", "Nome", "Quantidade")
+
+println("\n\nOrdenando ministérios começando pelos que mais viajaram:")
+val orderByMinisterioMaisViagens = countByMinisterioMaisViagens.orderBy(desc("Quantidade"))
+
+println("\n\nFormatando quantidades totalizadas")
+val formatMinisterioMaisViagens = orderByMinisterioMaisViagens.map(row => (row.getString(0), row.getString(1), formataNumero(row.getLong(2),false))).toDF("Codigo", "Nome", "Quantidade")
+
+println("\n\nImportando fs_ para manipular arquivos")
+import org.apache.hadoop.fs._;
+val fs = FileSystem.get(sc.hadoopConfiguration);
+
+println("\n\nDeletando resultado anterior")
+fs.delete(new Path(caminhoBase + "quantidade_viagens_csv_out"), true);
+
+println("\n\nSalvando arquivo csv da totalização das viagens por ministério")
+orderByMinisterioMaisViagens.coalesce(1).write.format("com.databricks.spark.csv").option("header", "true").save("file://"+caminhoBase+"quantidade_viagens_csv_out")
+
+println("\n\nObtendo nome do arquivo gerado")
+val file = fs.globStatus(new Path(caminhoBase + "quantidade_viagens_csv_out/part*"))(0).getPath().getName();
+
+println("\n\nRenomeando arquivo para quantidade_viagens.csv")
+fs.rename(new Path(caminhoBase + "quantidade_viagens_csv_out/" + file), new Path(caminhoBase + "quantidade_viagens_csv_out/quantidade_viagens.csv"));
+
+println("\n\nSomando os valores das viagens agrupando por ministério:")
+val sumByMinisterioMaisGastos = dadosPreProcessados.groupBy("Codigo","Nome").sum("Valor").toDF("Codigo", "Nome", "Valor")
+
+println("\n\nOrdenando ministérios começando pelos que mais gastaram:")
+val orderByMinisterioMaisGastos = sumByMinisterioMaisGastos.orderBy(desc("Valor")).map(row => (row.getString(0), row.getString(1), arredondaValor(row.getDouble(2)))).toDF("Codigo", "Nome", "Valor")
+
+println("\n\nFormatando valores totalizados")
+val formatMinisterioMaisGastos = orderByMinisterioMaisGastos.map(row => (row.getString(0), row.getString(1), formataNumero(row.getDouble(2),true))).toDF("Codigo", "Nome", "Valor")
+
+println("\n\nDeletando resultado anterior")
+fs.delete(new Path(caminhoBase + "valor_viagens_csv_out"), true);
+
+println("\n\nSalvando arquivo csv da totalização dos valores das viagens por ministério")
+orderByMinisterioMaisGastos.coalesce(1).write.format("com.databricks.spark.csv").option("header", "true").save("file://"+caminhoBase+"valor_viagens_csv_out")
+
+println("\n\nObtendo nome do arquivo gerado")
+val file = fs.globStatus(new Path(caminhoBase + "valor_viagens_csv_out/part*"))(0).getPath().getName();
+
+println("\n\nRenomeando arquivo para valor_viagens.csv")
+fs.rename(new Path(caminhoBase + "valor_viagens_csv_out/" + file), new Path(caminhoBase + "valor_viagens_csv_out/valor_viagens.csv"));
+
+println("\n\nCalculando quantidade total de ministérios (desconsiderando :'DETALHAMENTO DAS INFORMAÇÕES NÃO DISPONÍVEL') ")
+val quantidadeMinisterios = orderByMinisterioMaisViagens.count - 1
+
+println("\n\nCalculando quantidade total de viagens no período (desconsiderando :'DETALHAMENTO DAS INFORMAÇÕES NÃO DISPONÍVEL') ")
+val quantidadeTotalDeViagens = orderByMinisterioMaisViagens.select(sum("Quantidade")).first().getLong(0) - 1
+
+println("\n\nCalculando valor total gasto no período: ")
+val valorTotalGasto = orderByMinisterioMaisGastos.select(sum("Valor")).first().getDouble(0)
+
+println("\n\nCalculando valor de 'DETALHAMENTO DAS INFORMAÇÕES NÃO DISPONÍVEL'")
+val valorNaoDetalhado = orderByMinisterioMaisGastos.filter(row => row.getString(0).equals("00000")).select(sum("Valor")).first().getDouble(0)
+
+println("\n\nCalculando valor total gasto pelos ministérios no período (desconsiderando :'DETALHAMENTO DAS INFORMAÇÕES NÃO DISPONÍVEL') ")
+val valorTotalGastoMinisterios = valorTotalGasto - valorNaoDetalhado 
+
+println("\n\nCalculando valor médio final: ")
+val valorMedioFinal = (valorTotalGastoMinisterios/quantidadeMinisterios)+(valorNaoDetalhado/quantidadeMinisterios)
+
+val gastosMinisterios = orderByMinisterioMaisGastos.filter(row => !row.getString(0).equals("00000")).toDF("Codigo", "Nome", "Valor");
+
+val participacaoGastosMinisterios = gastosMinisterios.map(row => (row.getString(0), row.getString(1), row.getDouble(2), arredondaValor((row.getDouble(2)*100.0)/valorTotalGastoMinisterios,3))).toDF("Codigo","Nome","Valor", "% Partic")
+
+val rateioGastosNaoDetalhadosMinisterios = participacaoGastosMinisterios.map(row => (row.getString(0), row.getString(1), row.getDouble(2), row.getDouble(3), arredondaValor((valorNaoDetalhado*row.getDouble(3))/100.0,2))).toDF("Codigo","Nome","Valor", "% Partic", "Rateio Nao Detalh")
+
+val joinGastosEQuantidade = rateioGastosNaoDetalhadosMinisterios.join(orderByMinisterioMaisViagens.map( row => (row.getString(0),row.getLong(2))).toDF("CodigoQtd","Quantidade") ,$"Codigo" === $"CodigoQtd", "inner").toDF("Codigo","Nome","Valor", "% Partic", "Rateio Nao Detalh", "CodigoQtd", "Qtd Viagens")
+
+val resumoFinal = joinGastosEQuantidade.map(row => (row.getString(0), row.getString(1), row.getDouble(2), row.getDouble(3), row.getDouble(4),
+arredondaValor(row.getDouble(2) + row.getDouble(4)), arredondaValor((row.getDouble(2) + row.getDouble(4))/30), row.getLong(6), arredondaValor(row.getDouble(2)/row.getLong(6)))).toDF("Codigo","Nome","Valor", "% Partic", "Rateio Nao Detalh","Valor Total", "Media Diaria", "Qtd Viagens", "Vlr Medio Viag")
+
+println("\n\nDeletando resultado anterior")
+fs.delete(new Path(caminhoBase + "analitico_csv_out"), true);
+
+println("\n\nSalvando arquivo csv do relatório analítico valores das viagens por ministério")
+resumoFinal.coalesce(1).write.format("com.databricks.spark.csv").option("header", "true").save("file://"+caminhoBase+"analitico_csv_out")
+
+println("\n\nObtendo nome do arquivo gerado")
+val file = fs.globStatus(new Path(caminhoBase + "analitico_csv_out/part*"))(0).getPath().getName();
+
+println("\n\nRenomeando arquivo para analitico.csv")
+fs.rename(new Path(caminhoBase + "analitico_csv_out/" + file), new Path(caminhoBase + "analitico_csv_out/analitico.csv"));
+
+val formatResumoFinal = resumoFinal.map(row => (row.getString(0), row.getString(1), formataNumero(row.getDouble(2),true), formataNumero(row.getDouble(3),false), formataNumero(row.getDouble(4),true), formataNumero(row.getDouble(5),true), formataNumero(row.getDouble(6),true), formataNumero(row.getLong(7),false), formataNumero(row.getDouble(8),true) )).toDF("Codigo","Nome","Valor", "% Part", "Rat Nao Detalh","Valor Total", "Media Diaria", "Qtd", "Vlr Med Viag")
+
+
+println("\n\n======================================================================")
+println("Resumo")
+println("======================================================================")
+
+println("\nQuantidade de ministérios: " +  quantidadeMinisterios)
+println("\nQuantidade total de viagens no período: " + formataNumero(quantidadeTotalDeViagens,false))
+println("Quantidade média de viagens por ministério no período: " + formataNumero(quantidadeTotalDeViagens/quantidadeMinisterios,false))
+
+println("\nValor total de viagens no período: " + formataNumero(valorTotalGasto,true))
+println("\nValor total de viagens no período declarada para os ministérios: " + formataNumero(valorTotalGastoMinisterios,true))
+println("Valor médio gasto por ministério no período: " +  formataNumero(valorTotalGastoMinisterios/quantidadeMinisterios,true))
+
+println("\nValor total não detalhado (referente:'DETALHAMENTO DAS INFORMAÇÕES NÃO DISPONÍVEL'): " +  formataNumero(valorNaoDetalhado,true))
+println("\nValor médio (rateio) não detalhado para cada ministério: " +  formataNumero(valorNaoDetalhado/quantidadeMinisterios,true))
+
+println("\nValor médio FINAL gasto por cada ministério (detalhado + não detalho): " +  formataNumero(valorMedioFinal,true))
+
+println("\n----------------------------------------------------------------------")
+println("Valores Diários") 
+println("----------------------------------------------------------------------")
+println("\nQuantidade média de viagens por DIA no período: " + formataNumero(quantidadeTotalDeViagens/30,false))
+println("Valor médio gasto por DIA no período: " +  formataNumero(valorTotalGasto/30,true))
+
+println("\nQuantidade média de viagens por ministério por DIA no período: " + formataNumero((quantidadeTotalDeViagens/quantidadeMinisterios)/30,false))
+println("Valor médio gasto por ministério por DIA no período (detalhado + não detalho): " +  formataNumero(valorMedioFinal/30,true))
+
+println("\n----------------------------------------------------------------------")
+println("Quantidades de viagens começando pelos ministérios que mais viajaram") 
+println("----------------------------------------------------------------------")
+
+formatMinisterioMaisViagens.show(formatMinisterioMaisViagens.count.toInt,false)
+
+println("\n----------------------------------------------------------------------")
+println("Valor gasto começando pelos ministérios que mais gastaram") 
+println("----------------------------------------------------------------------")
+
+formatMinisterioMaisGastos.show(formatMinisterioMaisGastos.count.toInt,false)
+
+println("\n----------------------------------------------------------------------")
+println("Resumo analítico dos valores gastos") 
+println("----------------------------------------------------------------------")
+
+
+formatResumoFinal.show(formatResumoFinal.count.toInt,false)
+
+println("\n----------------------------------------------------------------------")
+println("Arquivos exportados") 
+println("----------------------------------------------------------------------")
+
+println("Arquivo da totalização de quantidade de viagens por ministério -> " + caminhoBase + "quantidade_viagens_csv_out/quantidade_viagens.csv" )
+println("Arquivo da totalização do valor das viagens por ministério -> " + caminhoBase + "valor_viagens_csv_out/valor_viagens.csv" )
+println("Arquivo com resumo final analítico -> " + caminhoBase + "analitico_csv_out/analitico.csv" )

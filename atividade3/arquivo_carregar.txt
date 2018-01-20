@@ -1,0 +1,174 @@
+
+println("======================================================================")
+println("Atividade 3: Análise panorama estados ibge x educação x bolsa família")
+println("======================================================================")
+
+println("\nSetando tempo inicial para contagem:")
+val tempoInicial = new java.util.Date().getTime()
+
+println("\nSetando caminho base dos arquivos da aplicação:")
+val caminhoBase = "/home/fdsdev/DevProjects/bigdata/atividade3/"
+
+println("\nDefinindo locale da execução corrente:")
+val localeCorrente: java.util.Locale = new java.util.Locale("pt", "BR")
+
+println("\nDeclarando função para formatação de números:")
+def formataNumero(valor:Number, isValorMonetario:Boolean):String = {  
+   var formatador:java.text.NumberFormat = null;   
+
+   if(isValorMonetario == true) { 
+      formatador = java.text.NumberFormat.getCurrencyInstance(localeCorrente);
+   } else {
+      formatador = java.text.NumberFormat.getInstance(localeCorrente);
+   }
+
+   formatador.format(valor);
+}
+
+def arredondaValor(valor:Double, casas:Int = 2):Double = { 
+   BigDecimal(valor).setScale(casas, BigDecimal.RoundingMode.HALF_UP).toDouble
+}
+
+println("\n\nCarregando arquivo csv com relacao dos estados da federacao:")
+val estados = spark.read.option("header", true).option("inferSchema", true).option("sep",",").csv(caminhoBase + "estados.csv")
+
+println("\n\nCarregando arquivos csv com a relação de diarias de  viagens referentes a 2016:")
+val diarias = spark.read.option("header", true).option("inferSchema", true).option("sep","\t").csv(caminhoBase + "/diarias/*_utf8.csv")
+
+println("\n\nFiltrando despesas de diarias de viagens do MINISTERIO DA EDUCACAO em 2016:")
+val diariasPreProcessadas = diarias.filter(r => r.getString(0).equals("26000")).map(r => (r.getString(20).replace(",",".").toDouble, r.getString(19))).toDF("Valor", "Data")
+
+println("\n\nSomando despesas com diarias MINISTERIO DA EDUCACAO em 2016:")
+val valorDiariasME2016 = diariasPreProcessadas.select(sum("Valor")).toDF("Valor").select("Valor").first().getDouble(0)
+
+println("\n\nSomando despesas com diarias MINISTERIO DA EDUCACAO em Janeiro de 2016:")
+val valorDiariasMEJaneiro2016 = diariasPreProcessadas.filter(r => r.getString(1).substring(3).equals("01/2016")).toDF("Valor", "Data").select(sum("Valor")).toDF("Valor").select("Valor").first().getDouble(0)
+
+println("\n\nCarregando arquivo csv com relacao dos pagamentos de convenios do governo federal com estados e municipios:")
+val convenios = spark.read.option("header", true).option("inferSchema", true).option("sep","\t").csv(caminhoBase + "convenios.csv")
+
+println("\n\nFiltrando convenios do MINISTERIO DA EDUCACAO repassados em 2016")
+val joinConvenioMEEstados2016 = convenios.filter(r => r.getString(20).length==10 && r.getString(20).substring(0,4).toInt == 2016  && r.getInt(7)==26000).join(estados ,$"UF" === $"nome2", "inner").map(r => (r.getString(22),r.getInt(7),r.getString(21).replace(",",".").toDouble,r.getString(20))).toDF("UF Convenio","Concedente","Valor","Data" )
+
+println("\n\nSomando convenios do MINISTERIO DA EDUCACAO repassados em 2016")
+val sumConvenioMEEstados2016 = joinConvenioMEEstados2016.groupBy("UF Convenio").sum("Valor").toDF("UF Convenio", "Valor")
+
+println("\n\nCalculando media mensal convenios do MINISTERIO DA EDUCACAO repassados em 2016")
+val mediaMensalConvenioMEEstados2016 = sumConvenioMEEstados2016.map(r => (r.getString(0),r.getDouble(1)/12)).toDF("UF Convenio", "Valor")
+
+println("\n\nFiltrando convenios do MINISTERIO DA EDUCACAO repassados em janeiro de 2016")
+val joinConvenioMEEstadosJaneiro2016 = joinConvenioMEEstados2016.filter(r => r.getString(3).length==10 && r.getString(3).substring(0,7).equals("2016-01")).toDF("UF Convenio","Concedente","Valor","Data" )
+
+println("\n\nSomando convenios do MINISTERIO DA EDUCACAO repassados em janeiro de 2016")
+val sumConvenioMEEstadosJaneiro2016 = joinConvenioMEEstadosJaneiro2016.groupBy("UF Convenio").sum("Valor").toDF("UF Convenio", "Valor")
+
+val orderFormatSumConvenioMEEstados = sumConvenioMEEstadosJaneiro2016.map(r => (r.getString(0),formataNumero(r.getDouble(1),true))).toDF("UF Convenio","Valor").orderBy("UF Convenio").toDF("UF Convenio","Valor")
+
+val orderMediaMensalConvenioMEEstados2016 = mediaMensalConvenioMEEstados2016.map(r => (r.getString(0),formataNumero(r.getDouble(1),true))).toDF("UF Convenio","Valor").orderBy("UF Convenio").toDF("UF Convenio","Valor")
+
+val valorRepassesME2016 = sumConvenioMEEstados2016.select(sum("Valor")).first().getDouble(0)
+val valorRepassesMEJaneiro2016 = sumConvenioMEEstadosJaneiro2016.select(sum("Valor")).first().getDouble(0)
+
+println("\n\nCarregando arquivo csv com panorama dos estados IBGE:")
+val dadosIniciaisPanorama = spark.read.option("header", true).option("inferSchema", true).option("sep",",").csv(caminhoBase + "panorama_ibge.csv")
+
+println("\n\nCalculando proporção entre matrículas do ensino fundamental 2015 pela população estimada 2017 com base no Panorama dos estados do IBGE:")
+val panorama =  dadosIniciaisPanorama.map(r => (r.getString(0),r.getInt(3),r.getInt(4), (r.getInt(4)*100.0)/r.getInt(3), r.getInt(5), r.getDouble(6))).toDF("UF","Populacao 2017(estimada)","Matriculas EF 2015","% Prop Matric/Popul", "Rend Mensal per Capita 2016", "IDH 2010")
+
+val panoramaFormatado =  panorama.map(r => (r.getString(0), formataNumero(r.getInt(1),false), formataNumero(r.getInt(2),false), arredondaValor(r.getDouble(3)), formataNumero(r.getInt(4),true), arredondaValor(r.getDouble(5),3))).toDF("UF","Populacao 2017(estimada)","Matriculas EF 2015","% Prop Matric/Popul", "Rend Mensal per Capita 2016", "IDH 2010")
+
+println("\n\nAgrupando soma repasses de janeiro 2016 do Ministerio da Educacao com o Panorama dos estados")
+val joinPanoramaConvenioMEEstados = panorama.join(sumConvenioMEEstadosJaneiro2016 ,$"UF" === $"UF Convenio", "inner").map(r => (r.getString(0),r.getInt(1),r.getInt(2),r.getDouble(3),r.getInt(4),r.getDouble(5),r.getDouble(7),(r.getDouble(7)/r.getInt(2)),(r.getDouble(7)/r.getInt(1))*1000 ) ).toDF("UF","Poupulacao","Matriculas","% Popul/Matric","Renda Mensal","IDH","Repasse jan 2016 ME", "Repasse/Matricula", "Repasse/1000 habitantes")
+
+val orderFormatJoinPanoramaConvenioMEEstados = joinPanoramaConvenioMEEstados.map(r => (r.getString(0),formataNumero(r.getInt(1),false),formataNumero(r.getInt(2),false),arredondaValor(r.getDouble(3)),formataNumero(r.getInt(4),true),r.getDouble(5),formataNumero(r.getDouble(6),true),formataNumero(r.getDouble(7),true),formataNumero(r.getDouble(8),true) ) ).toDF("UF","Poupulacao","Matriculas","% Popul/Matric","Renda Mensal","IDH","Media Mensal Repasse ME", "Repasse/Matricula", "Repasse/1000 habitantes").orderBy("UF").toDF("UF","Poupulacao","Matriculas","% Popul/Matric","Renda Mensal","IDH","Repasse jan 2016 ME","Repasse/Matricula", "Repasse/1000 habitantes")
+
+println("\n\nAgrupando media repasses de 2016 do Ministerio da Educacao com o Panorama dos estados")
+val joinPanoramaConvenioMEEstadosMedia2016 = panorama.join(mediaMensalConvenioMEEstados2016 ,$"UF" === $"UF Convenio", "inner").map(r => (r.getString(0),r.getInt(1),r.getInt(2),r.getDouble(3),r.getInt(4),r.getDouble(5),r.getDouble(7),(r.getDouble(7)/r.getInt(2)),(r.getDouble(7)/r.getInt(1))*1000 ) ).toDF("UF","Poupulacao","Matriculas","% Popul/Matric","Renda Mensal","IDH","Media Mensal Repasse ME", "Repasse/Matricula", "Repasse/1000 habitantes")
+
+val orderFormatJoinPanoramaConvenioMEEstadosMedia2016 = joinPanoramaConvenioMEEstadosMedia2016.map(r => (r.getString(0),formataNumero(r.getInt(1),false),formataNumero(r.getInt(2),false),arredondaValor(r.getDouble(3)),formataNumero(r.getInt(4),true),r.getDouble(5),formataNumero(r.getDouble(6),true),formataNumero(r.getDouble(7),true),formataNumero(r.getDouble(8),true) ) ).toDF("UF","Poupulacao","Matriculas","% Popul/Matric","Renda Mensal","IDH","Media Mensal Repasse ME", "Repasse/Matricula", "Repasse/1000 habitantes").orderBy("UF").toDF("UF","Poupulacao","Matriculas","% Popul/Matric","Renda Mensal","IDH","Media Mensal Repasse ME","Repasse/Matricula", "Repasse/1000 habitantes")
+
+println("\n\nCarregando arquivo csv com relacao da folha de pagamento do bolsa familia em janeiro de 2017:")
+val bolsaFamilia = spark.read.option("header", true).option("inferSchema", true).option("sep","\t").csv(caminhoBase + "201701_BolsaFamiliaFolhaPagamento.csv")
+
+val groupByCountBolsaFamiliaPorUF = bolsaFamilia.map(r => (r.getString(0))).toDF("UF").groupBy("UF").count().toDF("UF Bolsa Familia","Quantidade Beneficios")
+
+val orderFormatGroupByCountBolsaFamiliaPorUF = groupByCountBolsaFamiliaPorUF.map(r => ((r.getString(0),formataNumero(r.getLong(1),false)))).toDF("UF","Quantidade Beneficios").orderBy("UF").toDF("UF","Quantidade Beneficios")
+
+val groupBySumBolsaFamiliaPorUF = bolsaFamilia.map(r => (r.getString(0),r.getString(10).replace(",","").toDouble)).toDF("UF","Valor Beneficios").groupBy("UF").sum("Valor Beneficios").toDF("UF","Valor Beneficios")
+
+val orderFormatGroupBySumBolsaFamiliaPorUF = groupBySumBolsaFamiliaPorUF.map(r => ((r.getString(0),formataNumero(r.getDouble(1),true)))).toDF("UF","Valor Beneficios").orderBy("UF").toDF("UF","Valor Beneficios")
+
+val sumQtdTotalBeneficiosJaneiro2017 = groupByCountBolsaFamiliaPorUF.select(sum("Quantidade Beneficios")).first().getLong(0)
+val sumValorTotalBeneficiosJaneiro2017 = groupBySumBolsaFamiliaPorUF.select(sum("Valor Beneficios")).first().getDouble(0)
+
+println("\n\nAgrupando media repasses de 2016 do Ministerio da Educacao com o Panorama dos estados com Quantidad de Beneficios da Folha de Pagamento do bolsa familia em janeiro de 2017")
+val joinPanoramaQtdBolsaFamilia = joinPanoramaConvenioMEEstadosMedia2016.join(groupByCountBolsaFamiliaPorUF ,$"UF" === $"UF Bolsa Familia", "inner").map(r => (r.getString(0),r.getInt(1),r.getInt(2),r.getDouble(3),r.getInt(4),r.getDouble(5),r.getDouble(6),r.getDouble(7), r.getDouble(8), r.getLong(10),(r.getLong(10)*100.0)/r.getInt(1)  ) ).toDF("UF Panorama","Poupulacao","Matric EF","% Popul/Matric","Renda Mensal","IDH","Media Mens Rep ME", "Repasse/Matric", "Repasse/1000 hab", "Qtd Benefic Bolsa Familia", "% Popul/Qtd BF")
+
+println("\n\nAgrupando media repasses de 2016 do Ministerio da Educacao com o Panorama dos estados com Quantidad de Beneficios da Folha de Pagamento do bolsa familia em janeiro de 2017")
+val joinPanoramaSumBolsaFamilia = joinPanoramaQtdBolsaFamilia.join(groupBySumBolsaFamiliaPorUF ,$"UF" === $"UF Panorama", "inner").map(r => (r.getString(0),r.getInt(1),r.getInt(2),r.getDouble(3),r.getInt(4),r.getDouble(5),r.getDouble(6),r.getDouble(7), r.getDouble(8), r.getLong(9),r.getDouble(10),r.getDouble(12),r.getDouble(12)/r.getLong(9),(r.getDouble(12)/r.getInt(1))*1000.0  ) ).toDF("UF","Poupulacao","Matric EF","% Popul/Matric","Renda Mensal","IDH","Media Mens Rep ME", "Repasse ME/Matric", "Repasse ME/1000 hab", "Qtd Benefic Bolsa Familia", "% Popul/Qtd BF", "Valor Total BF","Valor Médio BF", "Repasse BF/1000 hab" )
+
+println("\n\nOrdenando e formatando media repasses de 2016 do Ministerio da Educacao com o Panorama dos estados com Quantidad de Beneficios da Folha de Pagamento do bolsa familia em janeiro de 2017")
+val orderFormatJoinPanoramaSumBolsaFamilia = joinPanoramaSumBolsaFamilia.map(r => (r.getString(0),formataNumero(r.getInt(1),false),formataNumero(r.getInt(4),true),r.getDouble(5),formataNumero(r.getDouble(6),true), formataNumero(r.getDouble(8),true), formataNumero(r.getLong(9),false),arredondaValor(r.getDouble(10)),formataNumero(r.getDouble(11),true),formataNumero(r.getDouble(12),true),formataNumero(r.getDouble(13),true) )).toDF("UF","Populacao","Renda Mensal","IDH","Med Rep ME", "Rep ME/1000hab", "Qtd Benef BF", "% Pop/BF", "Total BF","Val Med BF", "Rep BF/1000hab" ).orderBy("IDH").toDF("UF","Populacao","Renda Mensal","IDH","Med Rep ME", "Rep ME/1000hab", "Qtd Benef BF", "% Pop/BF", "Total BF","Val Med BF", "Rep BF/1000hab" )
+
+
+println("\n\n======================================================================")
+println("Resumo")
+println("======================================================================")
+
+println("\n\n----------------------------------------------------------------------")
+println("Panorama do estados IBGE ")
+println("(estados x populacao x matriculas Ensino Fundamental x renda mensal x IDH)")
+println("----------------------------------------------------------------------")
+
+println("\n\nDados extraidos diretamento do site do IBGE (https://cidades.ibge.gov.br/brasil/<UF>/panorama)")
+panoramaFormatado.show(panoramaFormatado.count.toInt,false)
+
+
+println("\n\n----------------------------------------------------------------------")
+println("Ministerio da Educacao: convenios com estados X despesas com diarias")
+println("----------------------------------------------------------------------")
+
+println("\n\nValor gasto com diarias pelo Ministerio da Educacao em 2016: "+ formataNumero(valorDiariasME2016,true))
+println("Valor repassado aos estados pelo Ministerio da Educacao em 2016: "+ formataNumero(valorRepassesME2016,true))
+
+println("\n\nValor gasto com diarias pelo Ministerio da Educacao em Janeiro 2016: "+ formataNumero(valorDiariasMEJaneiro2016,true))
+println("Valor repassado aos estados pelo Ministerio da Educacao em Janeiro 2016: "+ formataNumero(valorRepassesMEJaneiro2016,true))
+
+println("\nRepasse de convêncios Ministerio da Educacao em Janeiro 2016 por estado")
+orderFormatSumConvenioMEEstados.show(orderFormatSumConvenioMEEstados.count.toInt,false)
+
+println("\n\nPanorama x Repasses do Ministerio da Educacao Janeiro 2016")
+orderFormatJoinPanoramaConvenioMEEstados.show(orderFormatJoinPanoramaConvenioMEEstados.count.toInt,false)
+
+println("\n\nGasto médio mensal com diarias pelo Ministerio da Educacao em 2016: "+ formataNumero(valorDiariasME2016/12,true))
+println("Media mensal do Valor repassado aos estados pelo Ministerio da Educacao em 2016: "+ formataNumero(valorRepassesME2016/12,true))
+
+println("\n Media mensal de repasse de convêncios Ministerio da Educacao em 2016 por estado")
+orderMediaMensalConvenioMEEstados2016.show(orderMediaMensalConvenioMEEstados2016.count.toInt,false)
+
+println("\n\nPanorama x Repasses do Ministerio da Educacao Media Mensal 2016")
+orderFormatJoinPanoramaConvenioMEEstadosMedia2016.show(orderFormatJoinPanoramaConvenioMEEstadosMedia2016.count.toInt,false)
+
+
+println("\n\n----------------------------------------------------------------------")
+println("Beneficios Bolsa Familia")
+println("----------------------------------------------------------------------")
+
+println("\n\nQuantidade de beneficios por estado em Janeiro de 2017")
+orderFormatGroupByCountBolsaFamiliaPorUF.show(orderFormatGroupByCountBolsaFamiliaPorUF.count.toInt,false)
+
+println("\n\nSoma dos beneficios por estado em Janeiro de 2017")
+orderFormatGroupBySumBolsaFamiliaPorUF.show(orderFormatGroupBySumBolsaFamiliaPorUF.count.toInt,false)
+
+println("\n\n Quantidade Total de Beneficios na Folha de Pagamento em Janeiro 2017: "+ formataNumero(sumQtdTotalBeneficiosJaneiro2017,false))
+println("Valor Total de Beneficios na Folha de Pagamento em Janeiro 2017: "+ formataNumero(sumValorTotalBeneficiosJaneiro2017,true))
+
+println("\n\nPanorama X Repasses Ministerio da Educacao X Bolsa Familia Janeiro de 2017 (ordenado por IDH)")
+orderFormatJoinPanoramaSumBolsaFamilia.show(orderFormatJoinPanoramaSumBolsaFamilia.count.toInt,false)
+
+println("----------------------------------------------------------------------")
+
+println("\n\nTempo de processamento: " + (new java.util.Date().getTime() - tempoInicial)/1000 + " segundos")
+
+
+

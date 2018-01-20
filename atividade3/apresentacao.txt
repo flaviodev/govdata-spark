@@ -1,0 +1,36 @@
+
+
+Proposta de abordagem dos dados
+
+
+Apesar do exercício ter por finalidade principal a aplicação da ferramenta Spark para manipulação de dados, e o fato de que a amostragem a ser utilizada não ter uma "relevância estatística" (bem como, a minha falta de conhecimento em estatística), pretendo com esse trabalho apresentar uma comparação superficial dos gastos do governo federal, a partir da perspectiva: Gastos/Investimentos em Educação X  Programas de Distribuição de Renda.
+
+1 - Os dados utilizados para apurar os Gastos/Investimentos em Educação foram extraídos em: 
+
+http://www.portaltransparencia.gov.br/downloads/snapshot.asp?c=Convenios
+
+Onde foram filtrados todos os convênios do governo federal com estados e municípios associados ao Ministério da Educação. Apesar do valor totalizar parecer muito baixo, é nessa filtragem que aparece por exemplo os repasses do FUNDEB - Fundo Nacional de Desenvolvimento da Educação. (Em nenhum outro arquivo disponível foi possível associar gastos), parece que o governo federal repassa verbas aos estados e municípios e estes que definem como gastar, ou seja, se olharmos os dados estado por estado é possível obter a informação de uma forma mais próxima da realidade. Porém nessa abordagem serão consederados apenas os repasses do Ministério da Educação por meio desses convênios.
+
+2- A primeira avaliação dos repasses dos convênios do ME aproveita o levantamento realizado na atividade da aula 2, onde o valor dos repasses são comparados com os gastos do ministério com diárias.
+
+Para uma comparação mais interessante, inseri além dos dados do portal da transparência os dados referentes a um panorama dos estados no Site do IBGE, onde são apresentados dados bem resumidos e simples sobre cada estado, como: população, IDH, renda mensal e etc. (https://cidades.ibge.gov.br/brasil/<UF>/panorama)
+
+Como os dados das planilhas e outros arquivos eram muito complicados de se extrair, criei um algorítmo java para extrair os dados da página usando jsoup (num primeiro momento funcionou muito bem, porém descobri que alguns estados foram feito usando um código totalmente diferente, portanto usei o algorítmo para extrair a maioria dos dados, e o restante copiei manualmente), toda vez que o termo  PANORAMA for utilizado, refere-se ao uso destes dados.  
+
+3 - Distribução dos convênios entre os estados, rateio por alunos matriculados
+
+4 - Agrupamento por estado, contagem e soma dos benefícios do Bolsa Família de Janeiro de 2017
+
+5 - Por fim foram aplicadas a comparação com folha de pagamento do Bolsa Família, comparando a distribuição do benefício entre os estados, e proporção entre os repasses do ministério da educação e o repasse do bolsa família.
+
+
+Conclusões
+
+Como dito inicialmente, apesar da amostram não permitir uma avaliação conclusiva, é possível verificar algumas possível hipóses que apresentam alguma relevância:
+
+- O gasto mensal com diárias do Ministério da Educação é maior que o repasse que ele encaminha que a cada unidade da unidade da federação
+- Se os repasses do Ministério da Educação fossem distribuídos entre os alunos matriculados no ensino fundamental, o valor per capita seria irrisório, o que pode indicar um valor muito baixo investimento
+- Os dados do bolsa  família variam muito de estado pra estado, possivelmente por conta das regras para do programa para concessão do benefícios, bem como para definição do valor da cada benefício, em uma avaliação inicial é possível observar um padrão na relação da proporção população que recebe o benefício o a taxa do IDH, ou seja, quanto mais baixo o IDH de um estado maior é a parcela da população que participa do programa
+
+
+

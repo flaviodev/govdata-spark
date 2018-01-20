@@ -1,0 +1,142 @@
+fdsdev@fdsdev:~/DevProjects/spark/spark-2.2.0-bin-hadoop2.7/bin$ ./spark-shell 
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+17/12/05 02:19:07 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+17/12/05 02:19:07 WARN Utils: Your hostname, fdsdev resolves to a loopback address: 127.0.1.1; using 192.168.15.32 instead (on interface wlp1s0)
+17/12/05 02:19:07 WARN Utils: Set SPARK_LOCAL_IP if you need to bind to another address
+17/12/05 02:19:16 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+Spark context Web UI available at http://192.168.15.32:4040
+Spark context available as 'sc' (master = local[*], app id = local-1512447548870).
+Spark session available as 'spark'.
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /___/ .__/\_,_/_/ /_/\_\   version 2.2.0
+      /_/
+         
+Using Scala version 2.11.8 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_151)
+Type in expressions to have them evaluated.
+Type :help for more information.
+
+scala> :load /home/fdsdev/DevProjects/bigdata/atividades/arquivo_carregar.txt
+Loading /home/fdsdev/DevProjects/bigdata/atividades/arquivo_carregar.txt...
+--------------------------------------------------------
+Aplicativo de wordcounts das obras de Shakespeare
+--------------------------------------------------------
+
+Setando caminho base dos arquivos da aplicação:
+caminhoBase: String = /home/fdsdev/DevProjects/bigdata/atividades/
+
+
+Carregando arquivo das obras:
+livrosRDD: org.apache.spark.rdd.RDD[String] = /home/fdsdev/DevProjects/bigdata/atividades/pg100.txt MapPartitionsRDD[1] at textFile at <console>:26
+
+
+Carregando arquivo das stopwords:
+stopWordsRDD: org.apache.spark.rdd.RDD[String] = /home/fdsdev/DevProjects/bigdata/atividades/stopwords.txt MapPartitionsRDD[3] at textFile at <console>:26
+
+
+Transformando stopwords em uma lista (para usar o contains)
+listStopWords: Array[String] = Array(a, able, about, above, abst, accordance, according, accordingly, across, act, actually, added, adj, affected, affecting, affects, after, afterwards, again, against, ah, all, almost, alone, along, already, also, although, always, am, among, amongst, an, and, announce, another, any, anybody, anyhow, anymore, anyone, anything, anyway, anyways, anywhere, apparently, approximately, are, aren, arent, arise, around, as, aside, ask, asking, at, auth, available, away, awfully, b, back, be, became, because, become, becomes, becoming, been, before, beforehand, begin, beginning, beginnings, begins, behind, being, believe, below, beside, besides, between, beyond, biol, both, brief, briefly, but, by, c, ca, came, can, cannot, can't, cause, causes, certain, certain...
+
+Carregando arquivo com texto de direitos do livro que aparece de forma recorrente entre as obras (que influência na contagem)
+textoRecorrenteRDD: org.apache.spark.rdd.RDD[String] = /home/fdsdev/DevProjects/bigdata/atividades/texto_recorrente.txt MapPartitionsRDD[5] at textFile at <console>:26
+
+
+Transformando texto recorrente em uma lista (para usar o contains)
+listTextoRecorrente: Array[String] = Array(<<THIS ELECTRONIC VERSION OF THE COMPLETE WORKS OF WILLIAM, SHAKESPEARE IS COPYRIGHT 1990-1993 BY WORLD LIBRARY, INC., AND IS, PROVIDED BY PROJECT GUTENBERG ETEXT OF ILLINOIS BENEDICTINE COLLEGE, WITH PERMISSION.  ELECTRONIC AND MACHINE READABLE COPIES MAY BE, DISTRIBUTED SO LONG AS SUCH COPIES (1) ARE FOR YOUR OR OTHERS, PERSONAL USE ONLY, AND (2) ARE NOT DISTRIBUTED OR USED, COMMERCIALLY.  PROHIBITED COMMERCIAL DISTRIBUTION INCLUDES BY ANY, SERVICE THAT CHARGES FOR DOWNLOAD TIME OR FOR MEMBERSHIP.>>)
+
+
+Filtrando texto recorrente
+livrosSemTextoRecorrente: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[6] at filter at <console>:32
+
+
+Quebrando sentenças do arquivo em palavras
+palavras: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[7] at flatMap at <console>:34
+
+
+Removendo caracteres indesejados "<>&$#*_/()?:!.,;{}[]-
+palavrasNormalizadas: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[8] at map at <console>:36
+
+
+Removendo Apóstofo em início de palavras
+palavrasSemAposfoInicial: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[9] at map at <console>:38
+
+
+Filtrando palavras (listadas no arquivo stopwords, vazias, iniciadas com 'act_' ou com números
+palavrasFiltradas: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[10] at filter at <console>:44
+
+
+Repetindo remoção Apóstofo em início de palavras
+palavrasSemAposfoInicial2: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[11] at map at <console>:46
+
+
+Convertendo palavras para par key-value com valor 1 para posterior contagem
+palavrasComContador: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[12] at map at <console>:48
+
+
+Aplicando reduce pela chave, agrupando a chave somando o contador (1)
+palavrasAgrupadas: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[13] at reduceByKey at <console>:50
+
+
+Ordenando no sentido decrescente pelo campo da contagem
+palavrasRankeadas: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[18] at sortBy at <console>:52
+
+
+Criando RDD com as top 20 palavras mais citadas
+top20: org.apache.spark.rdd.RDD[(String, Int)] = ParallelCollectionRDD[19] at parallelize at <console>:54
+
+
+Importando fs_ para manipular arquivos
+import org.apache.hadoop.fs._
+fs: org.apache.hadoop.fs.FileSystem = org.apache.hadoop.fs.LocalFileSystem@7c37aed7
+
+
+Deletando resultado anterior
+res21: Boolean = true
+
+
+Salvando arquivo csv dos top20
+
+
+Obtendo nome do arquivo gerado
+file: String = part-00000-0225df11-3dc0-429c-9c72-49e538ea3d1d-c000.csv
+
+
+Renomeando arquivo para top20.csv
+res26: Boolean = true
+
+
+Criando RDD com as palavras agrupadas pela primeira letra
+palavrasAgrupadasPorLetra: org.apache.spark.rdd.RDD[(String, String, Int)] = MapPartitionsRDD[25] at map at <console>:55
+
+
+Aplicando ordenação ascendente para a primeira letra e descendente para a contagem
+palavrasAgrupadasPorLetraOrdenadas: org.apache.spark.rdd.RDD[(String, String, Int)] = MapPartitionsRDD[30] at sortBy at <console>:57
+
+
+Removendo primeira letra do agrupamento
+palavrasAgrupadasEOrdenadas: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[31] at map at <console>:59
+
+
+Deletando resultado anterior
+res31: Boolean = true
+
+
+Salvando arquivo csv de Todas Palavras Em Ordem Alfabetica
+
+
+Obtendo nome do arquivo gerado
+file: String = part-00000-8b426acc-90e2-41be-9aac-69aabdb9739b-c000.csv
+
+
+Renomeando arquivo para todasPalavrasEmOrdemAlfabetica.csv
+res36: Boolean = true
+--------------------------------------------------------
+Resumo
+--------------------------------------------------------
+Arquivo da atividade dos top20 -> /home/fdsdev/DevProjects/bigdata/atividades/top20_csv_out/top20.csv
+Arquivo da atividade dos todas palavras -> /home/fdsdev/DevProjects/bigdata/atividades/todasPalavrasEmOrdemAlfabetica_csv_out/todasPalavrasEmOrdemAlfabetica.csv
+

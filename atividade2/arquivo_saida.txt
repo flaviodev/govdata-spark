@@ -1,0 +1,286 @@
+fdsdev@fdsdev:~$ spark-shell 
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+17/12/12 01:49:02 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+17/12/12 01:49:03 WARN Utils: Your hostname, fdsdev resolves to a loopback address: 127.0.1.1; using 192.168.15.32 instead (on interface wlp1s0)
+17/12/12 01:49:03 WARN Utils: Set SPARK_LOCAL_IP if you need to bind to another address
+17/12/12 01:49:12 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+Spark context Web UI available at http://192.168.15.32:4040
+Spark context available as 'sc' (master = local[*], app id = local-1513050544482).
+Spark session available as 'spark'.
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /___/ .__/\_,_/_/ /_/\_\   version 2.2.0
+      /_/
+         
+Using Scala version 2.11.8 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_151)
+Type in expressions to have them evaluated.
+Type :help for more information.
+
+scala> :load /home/fdsdev/DevProjects/bigdata/atividade2/arquivo_carregar.txt
+Loading /home/fdsdev/DevProjects/bigdata/atividade2/arquivo_carregar.txt...
+======================================================================
+Atividade 2: Análise de viagens realizadas pelos ministérios
+======================================================================
+
+Setando caminho base dos arquivos da aplicação:
+caminhoBase: String = /home/fdsdev/DevProjects/bigdata/atividade2/
+
+Definindo locale da execução corrente:
+localeCorrente: java.util.Locale = pt_BR
+
+Declarando função para formatação de números:
+formataNumero: (valor: Number, isValorMonetario: Boolean)String
+arredondaValor: (valor: Double, casas: Int)Double
+
+
+Carregando arquivo csv com a relação das viagens:
+dadosIniciais: org.apache.spark.sql.DataFrame = [Código Órgão Superior: string, Nome Órgão Superior: string ... 19 more fields]
+
+
+Gerando novo dataset com as colunas codigo, nome e valor (tratanto e convertendo Substituindo o campo valor
+dadosPreProcessados: org.apache.spark.sql.DataFrame = [Codigo: string, Nome: string ... 1 more field]
+
+
+Contando a quantidade de viagens agrupando por ministério:
+countByMinisterioMaisViagens: org.apache.spark.sql.DataFrame = [Codigo: string, Nome: string ... 1 more field]
+
+
+Ordenando ministérios começando pelos que mais viajaram:
+orderByMinisterioMaisViagens: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [Codigo: string, Nome: string ... 1 more field]
+
+
+Formatando quantidades totalizadas
+formatMinisterioMaisViagens: org.apache.spark.sql.DataFrame = [Codigo: string, Nome: string ... 1 more field]
+
+
+Importando fs_ para manipular arquivos
+import org.apache.hadoop.fs._
+fs: org.apache.hadoop.fs.FileSystem = org.apache.hadoop.fs.LocalFileSystem@4011f95e
+
+
+Deletando resultado anterior
+res13: Boolean = true
+
+
+Salvando arquivo csv da totalização das viagens por ministério
+17/12/12 01:49:54 WARN Utils: Truncated the string representation of a plan since it was too large. This behavior can be adjusted by setting 'spark.debug.maxToStringFields' in SparkEnv.conf.
+                                                                                
+
+Obtendo nome do arquivo gerado
+file: String = part-00000-6f6ab403-b176-4ffe-a480-55cef2e76647-c000.csv
+
+
+Renomeando arquivo para quantidade_viagens.csv
+res18: Boolean = true
+
+
+Somando os valores das viagens agrupando por ministério:
+sumByMinisterioMaisGastos: org.apache.spark.sql.DataFrame = [Codigo: string, Nome: string ... 1 more field]
+
+
+Ordenando ministérios começando pelos que mais gastaram:
+orderByMinisterioMaisGastos: org.apache.spark.sql.DataFrame = [Codigo: string, Nome: string ... 1 more field]
+
+
+Formatando valores totalizados
+formatMinisterioMaisGastos: org.apache.spark.sql.DataFrame = [Codigo: string, Nome: string ... 1 more field]
+
+
+Deletando resultado anterior
+res23: Boolean = true
+
+
+Salvando arquivo csv da totalização dos valores das viagens por ministério
+                                                                                
+
+Obtendo nome do arquivo gerado
+file: String = part-00000-a974a828-7040-422c-bc17-3859f415fff8-c000.csv
+
+
+Renomeando arquivo para valor_viagens.csv
+res28: Boolean = true
+
+
+Calculando quantidade total de ministérios (desconsiderando :'DETALHAMENTO DAS INFORMAÇÕES NÃO DISPONÍVEL') 
+quantidadeMinisterios: Long = 22                                                
+
+
+Calculando quantidade total de viagens no período (desconsiderando :'DETALHAMENTO DAS INFORMAÇÕES NÃO DISPONÍVEL') 
+quantidadeTotalDeViagens: Long = 15736                                          
+
+
+Calculando valor total gasto no período: 
+valorTotalGasto: Double = 1.358317307E7                                         
+
+
+Calculando valor de 'DETALHAMENTO DAS INFORMAÇÕES NÃO DISPONÍVEL'
+valorNaoDetalhado: Double = 813465.62                                           
+
+
+Calculando valor total gasto pelos ministérios no período (desconsiderando :'DETALHAMENTO DAS INFORMAÇÕES NÃO DISPONÍVEL') 
+valorTotalGastoMinisterios: Double = 1.2769707450000001E7
+
+
+Calculando valor médio final: 
+valorMedioFinal: Double = 617416.9577272728
+gastosMinisterios: org.apache.spark.sql.DataFrame = [Codigo: string, Nome: string ... 1 more field]
+participacaoGastosMinisterios: org.apache.spark.sql.DataFrame = [Codigo: string, Nome: string ... 2 more fields]
+rateioGastosNaoDetalhadosMinisterios: org.apache.spark.sql.DataFrame = [Codigo: string, Nome: string ... 3 more fields]
+joinGastosEQuantidade: org.apache.spark.sql.DataFrame = [Codigo: string, Nome: string ... 5 more fields]
+resumoFinal: org.apache.spark.sql.DataFrame = [Codigo: string, Nome: string ... 7 more fields]
+
+
+Deletando resultado anterior
+res36: Boolean = true
+
+
+Salvando arquivo csv do relatório analítico valores das viagens por ministério
+                                                                                
+
+Obtendo nome do arquivo gerado
+file: String = part-00000-86fbb4a8-13bd-43b9-93f6-749295d27d75-c000.csv
+
+
+Renomeando arquivo para analitico.csv
+res41: Boolean = true
+formatResumoFinal: org.apache.spark.sql.DataFrame = [Codigo: string, Nome: string ... 7 more fields]
+
+
+======================================================================
+Resumo
+======================================================================
+
+Quantidade de ministérios: 22
+
+Quantidade total de viagens no período: 15.736
+Quantidade média de viagens por ministério no período: 715
+
+Valor total de viagens no período: R$ 13.583.173,07
+
+Valor total de viagens no período declarada para os ministérios: R$ 12.769.707,45
+Valor médio gasto por ministério no período: R$ 580.441,25
+
+Valor total não detalhado (referente:'DETALHAMENTO DAS INFORMAÇÕES NÃO DISPONÍVEL'): R$ 813.465,62
+
+Valor médio (rateio) não detalhado para cada ministério: R$ 36.975,71
+
+Valor médio FINAL gasto por cada ministério (detalhado + não detalho): R$ 617.416,96
+
+----------------------------------------------------------------------
+Valores Diários
+----------------------------------------------------------------------
+
+Quantidade média de viagens por DIA no período: 524
+Valor médio gasto por DIA no período: R$ 452.772,44
+
+Quantidade média de viagens por ministério por DIA no período: 23
+Valor médio gasto por ministério por DIA no período (detalhado + não detalho): R$ 20.580,57
+
+----------------------------------------------------------------------
+Quantidades de viagens começando pelos ministérios que mais viajaram
+----------------------------------------------------------------------
++------+---------------------------------------------+----------+               
+|Codigo|Nome                                         |Quantidade|
++------+---------------------------------------------+----------+
+|52000 |MINISTERIO DA DEFESA                         |3.256     |
+|26000 |MINISTERIO DA EDUCACAO                       |2.502     |
+|30000 |MINISTERIO DA JUSTICA E SEGURANÇA PUBLICA    |2.043     |
+|20113 |MINIST. DO PLANEJAMENTO, DESENVOLV. E GESTAO |1.326     |
+|25000 |MINISTERIO DA FAZENDA                        |1.314     |
+|20000 |PRESIDENCIA DA REPUBLICA                     |953       |
+|22000 |MINIST. DA AGRICUL.,PECUARIA E ABASTECIMENTO |858       |
+|39000 |MINIST.DOS TRANSP.,PORTOS E AVIACAO CIVIL    |713       |
+|36000 |MINISTERIO DA SAUDE                          |574       |
+|44000 |MINISTERIO DO MEIO AMBIENTE                  |564       |
+|55000 |MINISTERIO DO DESENVOLVIMENTO SOCIAL         |450       |
+|40000 |MINISTERIO DO TRABALHO                       |368       |
+|24000 |MINIST.DA CIENCIA,TECNOL.,INOV.E COMUNICACOES|167       |
+|32000 |MINISTERIO DE MINAS E ENERGIA                |161       |
+|53000 |MINISTERIO DA INTEGRACAO NACIONAL            |129       |
+|42000 |MINISTERIO DA CULTURA                        |103       |
+|28000 |MINIST. DA INDUSTRIA, COM.EXTERIOR E SERVICOS|59        |
+|51000 |MINISTERIO DO ESPORTE                        |58        |
+|37000 |MINIST. DA TRANSPARENCIA, FISCALIZACAO E CGU |53        |
+|56000 |MINISTERIO DAS CIDADES                       |46        |
+|54000 |MINISTERIO DO TURISMO                        |35        |
+|35000 |MINISTERIO DAS RELACOES EXTERIORES           |4         |
+|00000 |DETALHAMENTO DAS INFORMAÇÕES NÃO DISPONÍVEL. |1         |
++------+---------------------------------------------+----------+
+
+
+----------------------------------------------------------------------
+Valor gasto começando pelos ministérios que mais gastaram
+----------------------------------------------------------------------
++------+---------------------------------------------+---------------+          
+|Codigo|Nome                                         |Valor          |
++------+---------------------------------------------+---------------+
+|30000 |MINISTERIO DA JUSTICA E SEGURANÇA PUBLICA    |R$ 3.202.180,31|
+|26000 |MINISTERIO DA EDUCACAO                       |R$ 1.563.113,03|
+|52000 |MINISTERIO DA DEFESA                         |R$ 1.556.620,12|
+|36000 |MINISTERIO DA SAUDE                          |R$ 984.504,46  |
+|25000 |MINISTERIO DA FAZENDA                        |R$ 928.828,15  |
+|00000 |DETALHAMENTO DAS INFORMAÇÕES NÃO DISPONÍVEL. |R$ 813.465,62  |
+|22000 |MINIST. DA AGRICUL.,PECUARIA E ABASTECIMENTO |R$ 700.643,26  |
+|39000 |MINIST.DOS TRANSP.,PORTOS E AVIACAO CIVIL    |R$ 655.326,13  |
+|44000 |MINISTERIO DO MEIO AMBIENTE                  |R$ 597.049,91  |
+|20113 |MINIST. DO PLANEJAMENTO, DESENVOLV. E GESTAO |R$ 586.326,63  |
+|20000 |PRESIDENCIA DA REPUBLICA                     |R$ 540.756,01  |
+|55000 |MINISTERIO DO DESENVOLVIMENTO SOCIAL         |R$ 459.382,01  |
+|40000 |MINISTERIO DO TRABALHO                       |R$ 287.163,85  |
+|32000 |MINISTERIO DE MINAS E ENERGIA                |R$ 151.591,75  |
+|28000 |MINIST. DA INDUSTRIA, COM.EXTERIOR E SERVICOS|R$ 113.226,98  |
+|54000 |MINISTERIO DO TURISMO                        |R$ 99.164,11   |
+|53000 |MINISTERIO DA INTEGRACAO NACIONAL            |R$ 91.038,47   |
+|24000 |MINIST.DA CIENCIA,TECNOL.,INOV.E COMUNICACOES|R$ 77.150,68   |
+|37000 |MINIST. DA TRANSPARENCIA, FISCALIZACAO E CGU |R$ 62.312,44   |
+|42000 |MINISTERIO DA CULTURA                        |R$ 48.941,22   |
+|51000 |MINISTERIO DO ESPORTE                        |R$ 33.449,79   |
+|56000 |MINISTERIO DAS CIDADES                       |R$ 26.769,63   |
+|35000 |MINISTERIO DAS RELACOES EXTERIORES           |R$ 4.168,51    |
++------+---------------------------------------------+---------------+
+
+
+----------------------------------------------------------------------
+Resumo analítico dos valores gastos
+----------------------------------------------------------------------
++------+---------------------------------------------+---------------+------+--------------+---------------+-------------+-----+------------+
+|Codigo|Nome                                         |Valor          |% Part|Rat Nao Detalh|Valor Total    |Media Diaria |Qtd  |Vlr Med Viag|
++------+---------------------------------------------+---------------+------+--------------+---------------+-------------+-----+------------+
+|30000 |MINISTERIO DA JUSTICA E SEGURANÇA PUBLICA    |R$ 3.202.180,31|25,076|R$ 203.984,64 |R$ 3.406.164,95|R$ 113.538,83|2.043|R$ 1.567,39 |
+|26000 |MINISTERIO DA EDUCACAO                       |R$ 1.563.113,03|12,241|R$ 99.576,33  |R$ 1.662.689,36|R$ 55.422,98 |2.502|R$ 624,75   |
+|52000 |MINISTERIO DA DEFESA                         |R$ 1.556.620,12|12,19 |R$ 99.161,46  |R$ 1.655.781,58|R$ 55.192,72 |3.256|R$ 478,08   |
+|36000 |MINISTERIO DA SAUDE                          |R$ 984.504,46  |7,71  |R$ 62.718,20  |R$ 1.047.222,66|R$ 34.907,42 |574  |R$ 1.715,16 |
+|25000 |MINISTERIO DA FAZENDA                        |R$ 928.828,15  |7,274 |R$ 59.171,49  |R$ 987.999,64  |R$ 32.933,32 |1.314|R$ 706,87   |
+|22000 |MINIST. DA AGRICUL.,PECUARIA E ABASTECIMENTO |R$ 700.643,26  |5,487 |R$ 44.634,86  |R$ 745.278,12  |R$ 24.842,60 |858  |R$ 816,60   |
+|39000 |MINIST.DOS TRANSP.,PORTOS E AVIACAO CIVIL    |R$ 655.326,13  |5,132 |R$ 41.747,06  |R$ 697.073,19  |R$ 23.235,77 |713  |R$ 919,11   |
+|44000 |MINISTERIO DO MEIO AMBIENTE                  |R$ 597.049,91  |4,676 |R$ 38.037,65  |R$ 635.087,56  |R$ 21.169,59 |564  |R$ 1.058,60 |
+|20113 |MINIST. DO PLANEJAMENTO, DESENVOLV. E GESTAO |R$ 586.326,63  |4,592 |R$ 37.354,34  |R$ 623.680,97  |R$ 20.789,37 |1.326|R$ 442,18   |
+|20000 |PRESIDENCIA DA REPUBLICA                     |R$ 540.756,01  |4,235 |R$ 34.450,27  |R$ 575.206,28  |R$ 19.173,54 |953  |R$ 567,42   |
+|55000 |MINISTERIO DO DESENVOLVIMENTO SOCIAL         |R$ 459.382,01  |3,597 |R$ 29.260,36  |R$ 488.642,37  |R$ 16.288,08 |450  |R$ 1.020,85 |
+|40000 |MINISTERIO DO TRABALHO                       |R$ 287.163,85  |2,249 |R$ 18.294,84  |R$ 305.458,69  |R$ 10.181,96 |368  |R$ 780,34   |
+|32000 |MINISTERIO DE MINAS E ENERGIA                |R$ 151.591,75  |1,187 |R$ 9.655,84   |R$ 161.247,59  |R$ 5.374,92  |161  |R$ 941,56   |
+|28000 |MINIST. DA INDUSTRIA, COM.EXTERIOR E SERVICOS|R$ 113.226,98  |0,887 |R$ 7.215,44   |R$ 120.442,42  |R$ 4.014,75  |59   |R$ 1.919,10 |
+|54000 |MINISTERIO DO TURISMO                        |R$ 99.164,11   |0,777 |R$ 6.320,63   |R$ 105.484,74  |R$ 3.516,16  |35   |R$ 2.833,26 |
+|53000 |MINISTERIO DA INTEGRACAO NACIONAL            |R$ 91.038,47   |0,713 |R$ 5.800,01   |R$ 96.838,48   |R$ 3.227,95  |129  |R$ 705,72   |
+|24000 |MINIST.DA CIENCIA,TECNOL.,INOV.E COMUNICACOES|R$ 77.150,68   |0,604 |R$ 4.913,33   |R$ 82.064,01   |R$ 2.735,47  |167  |R$ 461,98   |
+|37000 |MINIST. DA TRANSPARENCIA, FISCALIZACAO E CGU |R$ 62.312,44   |0,488 |R$ 3.969,71   |R$ 66.282,15   |R$ 2.209,41  |53   |R$ 1.175,71 |
+|42000 |MINISTERIO DA CULTURA                        |R$ 48.941,22   |0,383 |R$ 3.115,57   |R$ 52.056,79   |R$ 1.735,23  |103  |R$ 475,16   |
+|51000 |MINISTERIO DO ESPORTE                        |R$ 33.449,79   |0,262 |R$ 2.131,28   |R$ 35.581,07   |R$ 1.186,04  |58   |R$ 576,72   |
+|56000 |MINISTERIO DAS CIDADES                       |R$ 26.769,63   |0,21  |R$ 1.708,28   |R$ 28.477,91   |R$ 949,26    |46   |R$ 581,95   |
+|35000 |MINISTERIO DAS RELACOES EXTERIORES           |R$ 4.168,51    |0,033 |R$ 268,44     |R$ 4.436,95    |R$ 147,90    |4    |R$ 1.042,13 |
++------+---------------------------------------------+---------------+------+--------------+---------------+-------------+-----+------------+
+
+
+----------------------------------------------------------------------
+Arquivos exportados
+----------------------------------------------------------------------
+Arquivo da totalização de quantidade de viagens por ministério -> /home/fdsdev/DevProjects/bigdata/atividade2/quantidade_viagens_csv_out/quantidade_viagens.csv
+Arquivo da totalização do valor das viagens por ministério -> /home/fdsdev/DevProjects/bigdata/atividade2/valor_viagens_csv_out/valor_viagens.csv
+Arquivo com resumo final analítico -> /home/fdsdev/DevProjects/bigdata/atividade2/analitico_csv_out/analitico.csv
+
+scala> 
+
